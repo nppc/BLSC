@@ -25,6 +25,7 @@ ISR(PCINT2_vect) {
 }
 
  void setup() { 
+   
    pinMode (encoder0But,INPUT_PULLUP);
    pinMode (13,OUTPUT);
 
@@ -36,6 +37,9 @@ ISR(PCINT2_vect) {
 
    Serial.begin (9600);
    myservo.attach(9);  // attaches the servo on pin 9 to the servo object
+   // calibration
+   //myservo.writeMicroseconds(2000);
+   //delay(5000);
    myservo.writeMicroseconds(1000); //Initialize ESC
    spindleSpeed = EEPROM.read(EEaddress);
    if(spindleSpeed>100){spindleSpeed =0;}
@@ -53,6 +57,7 @@ ISR(PCINT2_vect) {
   if (spindleSpeed != newSpindleSpeed) {
     spindleSpeed  = constrain(newSpindleSpeed,0,100);
     encoder.setPosition(spindleSpeed);
+    if (spindleOn) {commandSpindle(spindleSpeed,spindleOn);}
   }
 
    // check Encoder button
@@ -83,14 +88,15 @@ ISR(PCINT2_vect) {
    }
 } 
 
-void commandSpindle(byte Speed, bool sOn){
+void commandSpindle(int Speed, bool sOn){
   int sPWM = map(Speed, 0, 100, 1000, 2000);
-  if(spindleOn){
-    myservo.writeMicroseconds(sPWM); //Stop
-  }else{
-    myservo.writeMicroseconds(1000); //Stop
-  }
+  if(!spindleOn){sPWM=1000;}
+  myservo.writeMicroseconds(sPWM); //Run
   if(sOn){digitalWrite(13, HIGH);}else{digitalWrite(13, LOW);}
+  Serial.print("Control Spindle: %-");
+  Serial.print(Speed);
+  Serial.print(", us-");
+  Serial.println(sPWM);
 }
 
 void draw(void) {
@@ -103,6 +109,6 @@ void draw(void) {
   u8g.setFont(u8g_font_fub20n);// height 25
   itoa(spindleSpeed, tmp_string, 10);
   u8g.drawStr(40,33,tmp_string);
-  u8g.drawStr(40,63,"0"); // not yet implemented
+  u8g.drawStr(40,63,"-"); // not yet implemented
   
 }
