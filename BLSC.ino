@@ -37,9 +37,9 @@ ISR(PCINT2_vect) {
 
    Serial.begin (9600);
    myservo.attach(9);  // attaches the servo on pin 9 to the servo object
-   // calibration
-   //myservo.writeMicroseconds(2000);
-   //delay(5000);
+
+   Calibration();   // calibration if requested
+
    myservo.writeMicroseconds(1000); //Initialize ESC
    spindleSpeed = EEPROM.read(EEaddress);
    if(spindleSpeed>100){spindleSpeed =0;}
@@ -111,4 +111,34 @@ void draw(void) {
   u8g.drawStr(40,33,tmp_string);
   u8g.drawStr(40,63,"-"); // not yet implemented
   
+}
+
+// if while startup encoder button was pressed, then go thru calibration process
+// While encoder button is pressed, PWM output is 2000.
+// After button release PWM goes to 1000.
+//delay(5000);
+void Calibration() {
+   if (digitalRead(encoder0But)==LOW){   // pressed
+     delay(20); // debouncing
+     if (digitalRead(encoder0But)==LOW){   // still pressed
+		myservo.writeMicroseconds(2000);
+        // wait until button released 
+		
+        while (digitalRead(encoder0But)==LOW){
+		    // lcd refresh routines
+			u8g.firstPage();  
+			do {
+			  draw_calib();
+			} while( u8g.nextPage() );
+		} // wait while pressed
+		return;	// button is released - return to main routine
+	 }
+   }
+
+}
+
+void draw_calib(void) {
+  u8g.setFont(u8g_font_fur14); // height 14
+  u8g.drawStr(0,30,"Calibration...");  
+  u8g.drawStr(0,50,"Wait for tone.");  
 }
